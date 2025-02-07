@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commagra - Controlador de Stock</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #b00000;
+            color: white;
+            background-image: url('https://www.toptal.com/designers/subtlepatterns/uploads/marble-pattern.png');
+            background-size: contain;
+        }
+        .header {
+            background-color: white;
+            color: #b00000;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="container mx-auto p-6">
+        <div class="header rounded-xl p-6 text-center shadow-lg">
+            <h1 class="text-4xl font-bold">Commagra</h1>
+            <p class="text-xl">Control de materiales taller</p>
+        </div>
+
+        <div class="mt-6 bg-white text-black rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold mb-4">Agregar Material</h2>
+            <input type="text" id="itemName" placeholder="Nombre del Material" class="border p-2 rounded w-full mb-4">
+            <select id="itemType" class="border p-2 rounded w-full mb-4">
+                <option value="Lija">Lija</option>
+                <option value="Disco">Disco</option>
+                <option value="Silicona">Silicona</option>
+                <option value="Pasta">Pasta</option>
+                <option value="Porcelánico">Porcelánico</option>
+                <option value="Mármol">Mármol</option>
+                <option value="Cuarcita">Cuarcita</option>
+                <option value="Silestone">Silestone</option>
+                <option value="Granito">Granito</option> <!-- Opción añadida -->
+                <option value="Wedi">Wedi</option> <!-- Opción añadida -->
+            </select>
+            <input type="text" id="itemThickness" placeholder="Grueso" class="border p-2 rounded w-full mb-4">
+            <input type="text" id="itemSize" placeholder="Medida" class="border p-2 rounded w-full mb-4">
+            <input type="number" id="itemQuantity" placeholder="Cantidad" class="border p-2 rounded w-full mb-4">
+            <button onclick="addItem()" class="bg-red-500 text-white px-4 py-2 rounded">Agregar Material</button>
+        </div>
+
+        <div class="mt-6 bg-white text-black rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold mb-4">Inventario</h2>
+            <table class="min-w-full bg-white">
+                <thead>
+                    <tr>
+                        <th class="py-2">Material</th>
+                        <th class="py-2">Tipo</th>
+                        <th class="py-2">Grueso</th>
+                        <th class="py-2">Medida</th>
+                        <th class="py-2">Cantidad</th>
+                        <th class="py-2">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryList" class="text-center"></tbody>
+            </table>
+        </div>
+
+        <script>
+            let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+            function addItem() {
+                const name = document.getElementById('itemName').value.trim();
+                const type = document.getElementById('itemType').value.trim();
+                const thickness = document.getElementById('itemThickness').value.trim();
+                const size = document.getElementById('itemSize').value.trim();
+                const quantity = parseInt(document.getElementById('itemQuantity').value);
+
+                if (!name || !type || !thickness || !size || isNaN(quantity) || quantity <= 0) {
+                    alert("Por favor, complete todos los campos correctamente.");
+                    return;
+                }
+
+                const newItem = { name, type, thickness, size, quantity };
+                inventory.push(newItem);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                updateInventory();
+            }
+
+            function updateInventory() {
+                const inventoryList = document.getElementById('inventoryList');
+                inventoryList.innerHTML = '';
+                inventory.forEach((item, index) => {
+                    inventoryList.innerHTML += `<tr>
+                        <td class="border px-4 py-2">${item.name}</td>
+                        <td class="border px-4 py-2">${item.type}</td>
+                        <td class="border px-4 py-2">${item.thickness}</td>
+                        <td class="border px-4 py-2">${item.size}</td>
+                        <td class="border px-4 py-2">${item.quantity}</td>
+                        <td class="border px-4 py-2">
+                            <button onclick="editItem(${index})" class="bg-blue-500 text-white px-2 py-1 rounded">Editar</button>
+                            <button onclick="deleteItem(${index})" class="bg-red-500 text-white px-2 py-1 rounded">Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+
+            function deleteItem(index) {
+                inventory.splice(index, 1);
+                localStorage.setItem('inventory', JSON.stringify(inventory));
+                updateInventory();
+            }
+
+            function editItem(index) {
+                const item = inventory[index];
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemType').value = item.type;
+                document.getElementById('itemThickness').value = item.thickness;
+                document.getElementById('itemSize').value = item.size;
+                document.getElementById('itemQuantity').value = item.quantity;
+                deleteItem(index);
+            }
+
+            document.addEventListener("DOMContentLoaded", updateInventory);
+        </script>
+    </body>
+</html>
