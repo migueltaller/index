@@ -8,9 +8,11 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Conexión a MongoDB en Render
-mongoose.connect('mongodb://localhost:27017/inventario', {
+mongoose.connect('mongodb+srv://taller:donatoni2022@CLUSTER.mongodb.net/inventario', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 }).then(() => {
-    console.log('✅ Conectado a MongoDB en Render');
+    console.log('✅ Conectado a MongoDB Atlas');
 }).catch((error) => {
     console.error('❌ Error conectando a MongoDB:', error);
 });
