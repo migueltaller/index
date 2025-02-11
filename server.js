@@ -8,9 +8,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Conexión a MongoDB en Render
-mongoose.connect('mongodb+srv://tu_usuario:tu_contraseña@tu_cluster.mongodb.net/inventario', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+mongoose.connect('mongodb://localhost:27017/inventario', {
 }).then(() => {
     console.log('✅ Conectado a MongoDB en Render');
 }).catch((error) => {
