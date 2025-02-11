@@ -7,12 +7,12 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-// Conexión a MongoDB
-mongoose.connect('mongodb://localhost:27017/inventario', {
+// Conexión a MongoDB en Render
+mongoose.connect('mongodb+srv://tu_usuario:tu_contraseña@tu_cluster.mongodb.net/inventario', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
-    console.log('✅ Conectado a MongoDB');
+    console.log('✅ Conectado a MongoDB en Render');
 }).catch((error) => {
     console.error('❌ Error conectando a MongoDB:', error);
 });
@@ -24,17 +24,17 @@ const itemSchema = new mongoose.Schema({
     thickness: String,
     size: String,
     siliconas: {
-        tipo: String,  // Ej: Polímero, Acrílica, Color
+        tipo: String,
         cantidad: Number
     },
     discos: {
-        tipo: String,  // Ej: Corte, Desbaste
+        tipo: String,
         cantidad: Number,
         medida: String,
-        uso: String   // Ej: Granito, Porcelánico, Mármol
+        uso: String
     },
     pastas: {
-        tipo: String,  // Ej: Pulido, Envejecido
+        tipo: String,
         cantidad: Number
     }
 });
@@ -89,7 +89,7 @@ app.delete('/items/:id', async (req, res) => {
 });
 
 // Configuración del servidor
-const port = 3000;
-app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 Servidor corriendo en http://192.168.0.186:${port}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`🚀 Servidor corriendo en https://index-pphm.onrender.com`);
 });
