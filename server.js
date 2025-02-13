@@ -1,50 +1,24 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const admin = require('firebase-admin');
 
+// Inicializar Firebase Admin SDK
+const serviceAccount = require('./serviceAccountKey.json'); // Asegúrate de tener este archivo
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-// Conexión a MongoDB en Render
-mongoose.connect('mongodb+srv://taller:donatoni2022@CLUSTER.mongodb.net/inventario', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('✅ Conectado a MongoDB Atlas');
-}).catch((error) => {
-    console.error('❌ Error conectando a MongoDB:', error);
-});
-
-// Esquema actualizado con estructura organizada
-const itemSchema = new mongoose.Schema({
-    name: String,
-    quantity: Number,
-    thickness: String,
-    size: String,
-    siliconas: {
-        tipo: String,
-        cantidad: Number
-    },
-    discos: {
-        tipo: String,
-        cantidad: Number,
-        medida: String,
-        uso: String
-    },
-    pastas: {
-        tipo: String,
-        cantidad: Number
-    }
-});
-
-const Item = mongoose.model('Item', itemSchema);
-
 // Obtener todos los elementos
 app.get('/items', async (req, res) => {
     try {
-        const items = await Item.find();
+        const snapshot = await db.collection('items').get();
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.json(items);
     } catch (error) {
         res.status(500).json({ message: 'Error obteniendo los elementos', error });
@@ -54,9 +28,9 @@ app.get('/items', async (req, res) => {
 // Agregar un nuevo elemento
 app.post('/items', async (req, res) => {
     try {
-        const newItem = new Item(req.body);
-        await newItem.save();
-        res.json(newItem);
+        const newItem = req.body;
+        const docRef = await db.collection('items').add(newItem);
+        res.json({ id: docRef.id, ...newItem });
     } catch (error) {
         res.status(400).json({ message: 'Error al agregar el elemento', error });
     }
@@ -65,11 +39,9 @@ app.post('/items', async (req, res) => {
 // Editar un elemento
 app.put('/items/:id', async (req, res) => {
     try {
-        const updatedItem = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedItem) {
-            return res.status(404).json({ message: 'Elemento no encontrado' });
-        }
-        res.json(updatedItem);
+        const itemId = req.params.id;
+        await db.collection('items').doc(itemId).update(req.body);
+        res.json({ id: itemId, ...req.body });
     } catch (error) {
         res.status(400).json({ message: 'Error al actualizar el elemento', error });
     }
@@ -78,10 +50,8 @@ app.put('/items/:id', async (req, res) => {
 // Eliminar un elemento
 app.delete('/items/:id', async (req, res) => {
     try {
-        const deletedItem = await Item.findByIdAndDelete(req.params.id);
-        if (!deletedItem) {
-            return res.status(404).json({ message: 'Elemento no encontrado' });
-        }
+        const itemId = req.params.id;
+        await db.collection('items').doc(itemId).delete();
         res.json({ message: '✅ Elemento eliminado' });
     } catch (error) {
         res.status(500).json({ message: 'Error al eliminar el elemento', error });
@@ -91,5 +61,5 @@ app.delete('/items/:id', async (req, res) => {
 // Configuración del servidor
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log(`🚀 Servidor corriendo en https://index-pphm.onrender.com`);
+    console.log(`🚀 Servidor corriendo en http://localhost:${port}`);
 });
