@@ -17,6 +17,9 @@
             color: #b00000;
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
 </head>
 <body class="font-sans">
     <div class="container mx-auto p-6">
@@ -64,7 +67,25 @@
         </div>
 
         <script>
-            // Función para agregar un item
+            // Configuración de Firebase
+            const firebaseConfig = {
+                apiKey: "AIzaSyDvQdjklmSZcEKYsEuxI70pqOkhOJqpp70",
+                authDomain: "taller-eec81.firebaseapp.com",
+                projectId: "taller-eec81",
+                storageBucket: "taller-eec81.firebasestorage.app",
+                messagingSenderId: "699990855302",
+                appId: "1:699990855302:web:b05454c5ab24a952168b07",
+                measurementId: "G-WK69MQEDW7"
+            };
+
+            // Inicialización de Firebase
+            const app = firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            // Referencia a la colección "inventario" en Firestore
+            const inventoryRef = db.collection("inventario");
+
+            // Agregar material a Firestore
             function addItem() {
                 const name = document.getElementById('itemName').value.trim();
                 const type = document.getElementById('itemType').value.trim();
@@ -77,76 +98,71 @@
                     return;
                 }
 
+                // Guardar el nuevo material en Firestore
                 const newItem = { name, type, thickness, size, quantity };
-
-                // Realizamos una petición POST al backend
-                fetch('https://index-pphm.onrender.com/items', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(newItem),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Nuevo material agregado:', data);
-                    updateInventory(); // Actualiza la lista después de agregar
-                })
-                .catch(error => console.error('Error al agregar el material:', error));
-            }
-
-            // Función para actualizar el inventario
-            function updateInventory() {
-                // Realizamos una petición GET al backend
-                fetch('https://index-pphm.onrender.com/items')
-                    .then(response => response.json())
-                    .then(data => {
-                        const inventoryList = document.getElementById('inventoryList');
-                        inventoryList.innerHTML = '';
-                        data.forEach((item, index) => {
-                            inventoryList.innerHTML += `<tr>
-                                <td class="border px-4 py-2">${item.name}</td>
-                                <td class="border px-4 py-2">${item.type}</td>
-                                <td class="border px-4 py-2">${item.thickness}</td>
-                                <td class="border px-4 py-2">${item.size}</td>
-                                <td class="border px-4 py-2">${item.quantity}</td>
-                                <td class="border px-4 py-2">
-                                    <button onclick="editItem(${index})" class="bg-blue-500 text-white px-2 py-1 rounded">Editar</button>
-                                    <button onclick="deleteItem(${index})" class="bg-red-500 text-white px-2 py-1 rounded">Eliminar</button>
-                                </td>
-                            </tr>`;
-                        });
+                inventoryRef.add(newItem)
+                    .then(() => {
+                        alert("Material agregado con éxito");
+                        updateInventory(); // Refrescar la lista
                     })
-                    .catch(error => console.error('Error al obtener el inventario:', error));
+                    .catch((error) => {
+                        console.error("Error al agregar el material: ", error);
+                    });
             }
 
-            // Función para eliminar un item
-            function deleteItem(index) {
-                const itemId = inventory[index]._id; // Asumiendo que cada item tiene un ID de MongoDB
+            // Cargar los materiales desde Firestore y mostrarlos
+            function updateInventory() {
+                inventoryRef.get().then((querySnapshot) => {
+                    const inventoryList = document.getElementById('inventoryList');
+                    inventoryList.innerHTML = ''; // Limpiar la lista antes de mostrar
 
-                fetch(`https://index-pphm.onrender.com/items/${itemId}`, {
-                    method: 'DELETE',
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Elemento eliminado:', data);
-                    updateInventory(); // Actualiza la lista después de eliminar
-                })
-                .catch(error => console.error('Error al eliminar el elemento:', error));
+                    querySnapshot.forEach((doc) => {
+                        const item = doc.data();
+                        inventoryList.innerHTML += `<tr>
+                            <td class="border px-4 py-2">${item.name}</td>
+                            <td class="border px-4 py-2">${item.type}</td>
+                            <td class="border px-4 py-2">${item.thickness}</td>
+                            <td class="border px-4 py-2">${item.size}</td>
+                            <td class="border px-4 py-2">${item.quantity}</td>
+                            <td class="border px-4 py-2">
+                                <button onclick="editItem('${doc.id}')" class="bg-blue-500 text-white px-2 py-1 rounded">Editar</button>
+                                <button onclick="deleteItem('${doc.id}')" class="bg-red-500 text-white px-2 py-1 rounded">Eliminar</button>
+                            </td>
+                        </tr>`;
+                    });
+                });
             }
 
-            // Función para editar un item
-            function editItem(index) {
-                const item = inventory[index];
-                document.getElementById('itemName').value = item.name;
-                document.getElementById('itemType').value = item.type;
-                document.getElementById('itemThickness').value = item.thickness;
-                document.getElementById('itemSize').value = item.size;
-                document.getElementById('itemQuantity').value = item.quantity;
-                deleteItem(index); // Elimina el item del inventario
+            // Eliminar un material de Firestore
+            function deleteItem(id) {
+                inventoryRef.doc(id).delete()
+                    .then(() => {
+                        alert("Material eliminado");
+                        updateInventory(); // Refrescar la lista
+                    })
+                    .catch((error) => {
+                        console.error("Error al eliminar el material: ", error);
+                    });
             }
 
-            // Al cargar el documento, actualiza el inventario
+            // Editar un material (lo cargamos en los campos)
+            function editItem(id) {
+                inventoryRef.doc(id).get()
+                    .then((doc) => {
+                        const item = doc.data();
+                        document.getElementById('itemName').value = item.name;
+                        document.getElementById('itemType').value = item.type;
+                        document.getElementById('itemThickness').value = item.thickness;
+                        document.getElementById('itemSize').value = item.size;
+                        document.getElementById('itemQuantity').value = item.quantity;
+                        deleteItem(id); // Eliminamos el item para que se pueda volver a agregar con la edición
+                    })
+                    .catch((error) => {
+                        console.error("Error al obtener el material: ", error);
+                    });
+            }
+
+            // Cargar el inventario al inicio
             document.addEventListener("DOMContentLoaded", updateInventory);
         </script>
     </body>
